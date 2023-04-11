@@ -24,22 +24,21 @@ module.exports = createCoreController("api::order.order", ({ strapi }) => ({
             product_data: {
               name: item.title,
             },
-            unit_amount: item.price * 100, // Math.round(item.price * 100),
+            unit_amount: Math.round(item.price * 100),
           },
-          quantity: item.quantity,
+          quantity: product.quantity,
         };
       })
     );
     try {
-      const session = await stripe.checkout?.session?.create({
+      const session = await stripe.checkout?.sessions?.create({
         mode: "payment",
         success_url: `${process.env.CLIENT_URL}?success=true`,
         cancel_url: `${process.env.CLIENT_URL}?success=false`,
-        lineItems: lineItems,
-        shipping_address_collection: { allowed_countries: ["CA", "US"] },
+        line_items: lineItems,
+        shipping_address_collection: { allowed_countries: ["CA", "US", "GH"] },
         payment_method_types: ["card"],
       });
-
       await strapi.service("api::order.order").create({ 
         data: { 
             products, 
@@ -49,7 +48,7 @@ module.exports = createCoreController("api::order.order", ({ strapi }) => ({
       return {stripeSession: session}
     } catch (error) {
       ctx.response.status = 500;
-      return error;
+      return { error:error.message};
     }
   },
 }));
